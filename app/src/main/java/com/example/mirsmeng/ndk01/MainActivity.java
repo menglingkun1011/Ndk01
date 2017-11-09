@@ -18,6 +18,15 @@ import android.widget.Toast;
  * 2.创建jni目录，新建c/cpp文件，编写c代码
  * 3.添加Android.mk和Application.mk文件
  * 4.添加静态代码块，引入so包
+ * 5.在gradle.properties中添加android.useDeprecatedNdk=true
+ * 6.在buildTypes下添加cpu架构支持
+ *
+ *      debug {
+        ndk {
+
+            abiFilters "armeabi", "armeabi-v7a", "x86"
+        }
+ }
  *
  * ndk开发步骤：
  * 1.新建本地方法： public native String getStrAdd(String str,int len); 添加静态代码块引入System.loadLibrary("hello");
@@ -102,4 +111,17 @@ public class MainActivity extends AppCompatActivity {
     static {
         System.loadLibrary("hello");
     }
+
+    /**
+     *
+     * 如何使用编译好的so包呢？
+     * 1.把编译好的几种cpu架构的so包放到libs目录下
+     * 2.在app目录下的  build.gradle中的 android里面添加以下代码
+     *      sourceSets {
+                    main {
+                            jniLibs.srcDirs = ['libs']
+                         }
+            }
+     *3.把定义本地方法的类在需要调用的地方new出来  在调用本地方法。
+     */
 }
