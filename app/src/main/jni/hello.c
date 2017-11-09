@@ -51,6 +51,13 @@ JNIEXPORT jstring JNICALL Java_com_example_mirsmeng_ndk01_MainActivity_getStrAdd
     return (**env).NewStringUTF(env,cStr);
 }
 
+//产生一个0-99之间的随机数
+JNIEXPORT jint JNICALL Java_com_example_mirsmeng_ndk01_MainActivity_getRandom
+  (JNIEnv * env, jobject obj){
+
+    return rand() % 100;
+}
+
 #ifdef __cplusplus
 }
 #endif

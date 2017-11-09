@@ -1,8 +1,15 @@
 package com.example.mirsmeng.ndk01;
 
+import android.graphics.Color;
+import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 /**
@@ -40,6 +47,9 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView tv;
     private String str = "abcde";
+    private Button btn;
+    private ProgressBar pb;
+    private boolean flag = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,11 +58,46 @@ public class MainActivity extends AppCompatActivity {
         tv = (TextView) findViewById(R.id.tv);
 //        tv.setText(getJniStr());
         tv.setText(getStrAdd(str,str.length()));
+        btn = (Button) findViewById(R.id.btn);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new Thread(){
+                    @Override
+                    public void run() {
+                        super.run();
+                        
+                        while(flag){
+                            pb.setProgress(getRandom());
+                            SystemClock.sleep(1000);
+                            Log.d("进度：", "当前进度： "+pb.getProgress());
+                            if(pb.getProgress() >=90){
+                                flag = false;
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(MainActivity.this, "获取到了大于90的数字", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }.start();
+            }
+        });
+        pb = (ProgressBar) findViewById(R.id.pb);
+        pb.setMax(100);
+
     }
 
+    //获取c中的字符串
     public native String getJniStr();
 
+    //对该字符串的每个字符进行+1操作
     public native String getStrAdd(String str,int len);
+
+    //获取一个随机数
+    public native int getRandom();
 
     static {
         System.loadLibrary("hello");
