@@ -1,7 +1,0 @@
-com.example.mirsmeng.ndk01.test.app-androidTest-0 /Users/mlk/Documents/AndroidProject/Ndk01/app/build/generated/res/resValues/androidTest/debug
-com.example.mirsmeng.ndk01.test.app-androidTest-1 /Users/mlk/Documents/AndroidProject/Ndk01/app/build/generated/res/rs/androidTest/debug
-com.example.mirsmeng.ndk01.test.app-mergeDebugAndroidTestResources-2 /Users/mlk/Documents/AndroidProject/Ndk01/app/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/merged.dir
-com.example.mirsmeng.ndk01.test.app-mergeDebugAndroidTestResources-3 /Users/mlk/Documents/AndroidProject/Ndk01/app/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/stripped.dir
-com.example.mirsmeng.ndk01.test.app-merged_res-4 /Users/mlk/Documents/AndroidProject/Ndk01/app/build/intermediates/merged_res/debugAndroidTest
-com.example.mirsmeng.ndk01.test.app-androidTest-5 /Users/mlk/Documents/AndroidProject/Ndk01/app/src/androidTest/res
-com.example.mirsmeng.ndk01.test.app-androidTestDebug-6 /Users/mlk/Documents/AndroidProject/Ndk01/app/src/androidTestDebug/res
