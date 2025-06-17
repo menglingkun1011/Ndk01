@@ -1,8 +1,6 @@
 package com.example.mirsmeng.ndk01;
 
-import android.graphics.Color;
 import android.os.SystemClock;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -10,6 +8,8 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 
 /**
@@ -31,7 +31,7 @@ import android.widget.Toast;
  * ndk开发步骤：
  * 1.新建本地方法： public native String getStrAdd(String str,int len); 添加静态代码块引入System.loadLibrary("hello");
  * 2.选中app  右键NEW-》FOLDER--》JNI FOLDER  生出cpp目录，在cpp目录下新建hello.c文件
- * 3.在hello.c引入包 #include<stdio.h>  #include<stdlib.h>   #include<jni.h>
+ * 3.在hello.c引入包 #include<stdio.h>  #include<stdlib.h>   #include<cpp.h>
  * 4.打开这个目录C:\Users\MirsMeng\Desktop\Ndk01\app\src\main\java   右键在此处打开命令行窗口，输入javah com.example.mirsmeng.ndk01.MainActivity
  * 生成.h文件，用notepad打开  复制方法名（JNIEXPORT jstring JNICALL Java_com_example_mirsmeng_ndk01_MainActivity_getStrAdd(JNIEnv *, jobject, jstring, jint)）
  * 到hello.c文件中，编写c代码
@@ -55,61 +55,21 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
 
     private TextView tv;
-    private String str = "abcde";
-    private Button btn;
-    private ProgressBar pb;
-    private boolean flag = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         tv = (TextView) findViewById(R.id.tv);
-//        tv.setText(getJniStr());
-        tv.setText(getStrAdd(str,str.length()));
-        btn = (Button) findViewById(R.id.btn);
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new Thread(){
-                    @Override
-                    public void run() {
-                        super.run();
-                        
-                        while(flag){
-                            pb.setProgress(getRandom());
-                            SystemClock.sleep(1000);
-                            Log.d("进度：", "当前进度： "+pb.getProgress());
-                            if(pb.getProgress() >=90){
-                                flag = false;
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(MainActivity.this, "获取到了大于90的数字", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                        }
-                    }
-                }.start();
-            }
-        });
-        pb = (ProgressBar) findViewById(R.id.pb);
-        pb.setMax(100);
+        tv.setText(stringFromJNI());
 
     }
 
     //获取c中的字符串
-    public native String getJniStr();
-
-    //对该字符串的每个字符进行+1操作
-    public native String getStrAdd(String str,int len);
-
-    //获取一个随机数
-    public native int getRandom();
+    public native String stringFromJNI();
 
     static {
-        System.loadLibrary("hello");
+        System.loadLibrary("native-lib");
     }
 
     /**

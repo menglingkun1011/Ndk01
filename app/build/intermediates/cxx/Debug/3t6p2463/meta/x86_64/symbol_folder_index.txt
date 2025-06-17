@@ -1,0 +1,1 @@
+/Users/mlk/Documents/AndroidProject/Ndk01/app/build/intermediates/cxx/Debug/3t6p2463/obj/x86_64

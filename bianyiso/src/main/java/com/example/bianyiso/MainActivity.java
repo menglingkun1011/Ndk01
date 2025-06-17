@@ -1,8 +1,9 @@
 package com.example.bianyiso;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 /**
  * 1.新建JniSo类 定义本地方法，加载so包

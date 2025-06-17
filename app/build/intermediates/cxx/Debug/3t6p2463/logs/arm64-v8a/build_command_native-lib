@@ -1,0 +1,4 @@
+/Users/mlk/Library/Android/sdk/cmake/3.22.1/bin/ninja \
+  -C \
+  /Users/mlk/Documents/AndroidProject/Ndk01/app/.cxx/Debug/3t6p2463/arm64-v8a \
+  native-lib

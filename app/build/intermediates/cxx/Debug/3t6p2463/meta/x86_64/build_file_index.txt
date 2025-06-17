@@ -1,0 +1,1 @@
+/Users/mlk/Documents/AndroidProject/Ndk01/app/src/main/cpp/CMakeLists.txt

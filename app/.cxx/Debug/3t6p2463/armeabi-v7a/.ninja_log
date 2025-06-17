@@ -1,0 +1,15 @@
+# ninja log v5
+0	6	0	clean	52021673399098c5
+189	311	1750145124688234482	/Users/mlk/Documents/AndroidProject/Ndk01/app/build/intermediates/cxx/Debug/3t6p2463/obj/armeabi-v7a/libndkdemo1.so	dea5cf361caf550e
+1	189	1750145124578050433	CMakeFiles/ndkdemo1.dir/native-lib.cpp.o	1cf077fc008b5df1
+0	12	0	clean	52021673399098c5
+0	6	0	clean	52021673399098c5
+0	167	1750145940097093742	CMakeFiles/native-lib.dir/native-lib.cpp.o	5164c38782bc2d96
+168	230	1750145940149230624	/Users/mlk/Documents/AndroidProject/Ndk01/app/build/intermediates/cxx/Debug/3t6p2463/obj/armeabi-v7a/libnative-lib.so	843b03a1e499c621
+0	9	0	clean	52021673399098c5
+0	165	1750146051841115499	CMakeFiles/native-lib.dir/native-lib.cpp.o	5164c38782bc2d96
+165	227	1750146051893801003	/Users/mlk/Documents/AndroidProject/Ndk01/app/build/intermediates/cxx/Debug/3t6p2463/obj/armeabi-v7a/libnative-lib.so	843b03a1e499c621
+0	9	0	clean	52021673399098c5
+0	8	0	clean	52021673399098c5
+0	159	1750146083646171866	CMakeFiles/native-lib.dir/native-lib.cpp.o	5164c38782bc2d96
+159	219	1750146083696463425	/Users/mlk/Documents/AndroidProject/Ndk01/app/build/intermediates/cxx/Debug/3t6p2463/obj/armeabi-v7a/libnative-lib.so	843b03a1e499c621
