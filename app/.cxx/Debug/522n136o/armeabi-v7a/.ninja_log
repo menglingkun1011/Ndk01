@@ -1,0 +1,9 @@
+# ninja log v5
+0	9	0	clean	52021673399098c5
+0	9	0	clean	52021673399098c5
+0	8	0	clean	52021673399098c5
+0	11	0	clean	52021673399098c5
+0	157	1750670822674664373	CMakeFiles/native-lib.dir/native-lib.cpp.o	5164c38782bc2d96
+157	203	1750670822720491893	/Users/mlk/Documents/AndroidProject/Ndk01/app/build/intermediates/cxx/Debug/522n136o/obj/armeabi-v7a/libnative-lib.so	5f9e346a16a2d8b3
+0	9	0	clean	52021673399098c5
+0	9	0	clean	52021673399098c5

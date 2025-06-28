@@ -55,6 +55,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainActivity extends AppCompatActivity {
 
     private TextView tv;
+    public static final String TAG = MainActivity.class.getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +63,23 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         tv = (TextView) findViewById(R.id.tv);
         tv.setText(stringFromJNI());
+
+        findViewById(R.id.btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i(TAG,"ddd333");
+                JniUtils jniUtils = new JniUtils();
+                String ss = jniUtils.stringFromJNI();
+                Log.i(TAG,"ss:"+ss);
+                tv.setText(ss);
+                int[] arr = new int[10];
+                jniUtils.intArrFromJNI(arr);
+                Log.i(TAG,"arr len: "+arr.length);
+                for (int i = 0; i < arr.length; i++) {
+                    Log.i(TAG,"arr["+i+"]: "+arr[i]);
+                }
+            }
+        });
 
     }
 

@@ -10,12 +10,13 @@ android {
         versionCode 1
         versionName "1.0"
 //        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-//        externalNativeBuild {
-//            cmake {
-//                cppFlags ""
+        externalNativeBuild {
+            cmake {
+                cppFlags ""
 //                arguments "-DFORCE_NATIVE_LIB_NAME_HELLO" // 可选
-//            }
-//        }
+                arguments += "-DANDROID_STL=c++_shared"//改成这个
+            }
+        }
 
         // 指定支持的 ABI 架构
         ndk {
@@ -43,10 +44,17 @@ android {
             version "3.22.1" // 或其他版本
         }
     }
+
+    sourceSets {
+        main {
+//            jniLibs.srcDirs = ['jniLibs']
+            jniLibs.srcDirs = ['src/main/jniLibs']
+        }
+    }
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation fileTree(include: ['*.jar'], dir: 'jniLibs')
 //    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
 //        exclude group: 'com.android.support', module: 'support-annotations'
 //    })
