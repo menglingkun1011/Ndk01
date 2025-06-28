@@ -1,3 +1,0 @@
-/Users/mlk/Documents/AndroidProject/Ndk01/app/.cxx/Debug/3t6p2463/x86/CMakeFiles/native-lib.dir
-/Users/mlk/Documents/AndroidProject/Ndk01/app/.cxx/Debug/3t6p2463/x86/CMakeFiles/edit_cache.dir
-/Users/mlk/Documents/AndroidProject/Ndk01/app/.cxx/Debug/3t6p2463/x86/CMakeFiles/rebuild_cache.dir
