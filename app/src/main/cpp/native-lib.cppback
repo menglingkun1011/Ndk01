@@ -1,0 +1,233 @@
+#include <jni.h>
+#include <aaudio/AAudio.h>
+#include <android/log.h>
+#include <atomic>
+#include <cstring> // for memset
+#include <unistd.h>
+#include <chrono>   // ⚠️ 这个绝对不能少
+
+#define LOG_TAG "AAudioJNIDemo"
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+
+// ================== 环形缓冲区（无锁，单生产者-单消费者）==================
+class RingBuffer {
+public:
+    explicit RingBuffer(size_t capacity) : mCapacity(capacity), mBuffer(new float[capacity]) {}
+
+    ~RingBuffer() { delete[] mBuffer; }
+
+    // 写入数据（录音线程调用）
+    bool write(const float* data, size_t numFrames) {
+        size_t writeIndex = mWriteIndex.load(std::memory_order_relaxed);
+        size_t readIndex = mReadIndex.load(std::memory_order_acquire);
+
+        size_t available = (readIndex > writeIndex)
+                           ? (readIndex - writeIndex - 1)
+                           : (mCapacity - writeIndex + readIndex - 1);
+
+        if (numFrames > available) return false; // 缓冲区满
+
+        size_t tail = mCapacity - writeIndex;
+        if (numFrames <= tail) {
+            memcpy(&mBuffer[writeIndex], data, numFrames * sizeof(float));
+        } else {
+            memcpy(&mBuffer[writeIndex], data, tail * sizeof(float));
+            memcpy(mBuffer, &data[tail], (numFrames - tail) * sizeof(float));
+        }
+
+        writeIndex += numFrames;
+        if (writeIndex >= mCapacity) writeIndex -= mCapacity;
+        mWriteIndex.store(writeIndex, std::memory_order_release);
+        return true;
+    }
+
+    // 读取数据（播放线程调用）
+    size_t read(float* output, size_t numFrames) {
+        size_t readIndex = mReadIndex.load(std::memory_order_relaxed);
+        size_t writeIndex = mWriteIndex.load(std::memory_order_acquire);
+
+        size_t available = (writeIndex >= readIndex)
+                           ? (writeIndex - readIndex)
+                           : (mCapacity - readIndex + writeIndex);
+
+        size_t framesToRead = (numFrames < available) ? numFrames : available;
+
+        size_t tail = mCapacity - readIndex;
+        if (framesToRead <= tail) {
+            memcpy(output, &mBuffer[readIndex], framesToRead * sizeof(float));
+        } else {
+            memcpy(output, &mBuffer[readIndex], tail * sizeof(float));
+            memcpy(&output[tail], mBuffer, (framesToRead - tail) * sizeof(float));
+        }
+
+        readIndex += framesToRead;
+        if (readIndex >= mCapacity) readIndex -= mCapacity;
+        mReadIndex.store(readIndex, std::memory_order_release);
+        return framesToRead;
+    }
+
+private:
+    const size_t mCapacity;
+    float* mBuffer;
+    std::atomic<size_t> mReadIndex{0};
+    std::atomic<size_t> mWriteIndex{0};
+};
+
+// ================== 全局变量 ==================
+static std::atomic<bool> g_running{false};
+static RingBuffer g_ringBuffer(1024); // 足够大，避免溢出
+
+static AAudioStream* g_inputStream = nullptr;
+static AAudioStream* g_outputStream = nullptr;
+
+static constexpr int32_t kSampleRate = 8000;
+static constexpr int32_t kChannels = 1;
+static constexpr int32_t kFramesPerBuffer = 8;
+
+// ================== 回调函数 ==================
+
+aaudio_data_callback_result_t inputCallback(
+        AAudioStream* stream,
+        void* userData,
+        void* audioData,
+        int32_t numFrames) {
+    (void)stream;
+    (void)userData;
+    int32_t fromat = AAudioStream_getFormat(stream); //获取实际使用的数据格式（I16 或 FLOAT）。
+    int32_t sampleRate = AAudioStream_getSampleRate(stream); //获取采样率。
+    int32_t channelCount = AAudioStream_getChannelCount(stream); //获取声道数。
+
+    LOGI("inputCallback called! numFrames = %d,fromat = %d,sampleRate = %d,channelCount = %d", numFrames,fromat,sampleRate,channelCount); // 👈 添加这行
+
+    float* inputBuffer = static_cast<float*>(audioData);
+    // 尝试写入环形缓冲区（失败则丢弃，避免阻塞）
+    g_ringBuffer.write(inputBuffer, numFrames);
+
+    return AAUDIO_CALLBACK_RESULT_CONTINUE;
+}
+
+aaudio_data_callback_result_t outputCallback(
+        AAudioStream* stream,
+        void* userData,
+        void* audioData,
+        int32_t numFrames) {
+    (void)stream;
+    (void)userData;
+
+    float* outputBuffer = static_cast<float*>(audioData);
+
+    // 尝试读取全部所需帧数
+    size_t framesRead = g_ringBuffer.read(outputBuffer, numFrames);
+
+    if (framesRead < (size_t)numFrames) {
+        // 可选策略1：重复最后1帧（比静音好）
+        if (framesRead > 0) {
+            float lastSample = outputBuffer[framesRead - 1];
+            for (size_t i = framesRead; i < (size_t)numFrames; ++i) {
+                outputBuffer[i] = lastSample;
+            }
+        } else {
+            // 完全没数据，静音
+            memset(outputBuffer, 0, numFrames * sizeof(float));
+        }
+    }
+
+    return g_running.load() ? AAUDIO_CALLBACK_RESULT_CONTINUE : AAUDIO_CALLBACK_RESULT_STOP;
+}
+
+// ================== JNI 函数 ==================
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_mirsmeng_ndk01_MainActivity_startAudioLoop(JNIEnv *env, jobject thiz) {
+    if (g_running.load()) return;
+
+    aaudio_result_t result;
+
+    // ===== 输入流 =====
+    AAudioStreamBuilder* inputBuilder = nullptr;
+    AAudio_createStreamBuilder(&inputBuilder);
+    AAudioStreamBuilder_setDirection(inputBuilder, AAUDIO_DIRECTION_INPUT);
+    AAudioStreamBuilder_setSampleRate(inputBuilder, kSampleRate);
+    AAudioStreamBuilder_setChannelCount(inputBuilder, kChannels);
+    AAudioStreamBuilder_setFormat(inputBuilder, AAUDIO_FORMAT_PCM_FLOAT);
+    AAudioStreamBuilder_setPerformanceMode(inputBuilder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
+    AAudioStreamBuilder_setSharingMode(inputBuilder, AAUDIO_SHARING_MODE_SHARED);
+    AAudioStreamBuilder_setDataCallback(inputBuilder, inputCallback, nullptr);
+
+    result = AAudioStreamBuilder_openStream(inputBuilder, &g_inputStream);
+
+    AAudioStreamBuilder_delete(inputBuilder);
+    if (result != AAUDIO_OK || !g_inputStream) {
+        LOGE("Failed to open input stream: %s", AAudio_convertResultToText(result));
+        return;
+    }
+
+    // ===== 输出流 =====
+    AAudioStreamBuilder* outputBuilder = nullptr;
+    AAudio_createStreamBuilder(&outputBuilder);
+    AAudioStreamBuilder_setDirection(outputBuilder, AAUDIO_DIRECTION_OUTPUT);
+    AAudioStreamBuilder_setSampleRate(outputBuilder, kSampleRate);
+    AAudioStreamBuilder_setChannelCount(outputBuilder, kChannels);
+    AAudioStreamBuilder_setFormat(outputBuilder, AAUDIO_FORMAT_PCM_FLOAT);
+    AAudioStreamBuilder_setPerformanceMode(outputBuilder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
+    AAudioStreamBuilder_setSharingMode(outputBuilder, AAUDIO_SHARING_MODE_SHARED);
+    AAudioStreamBuilder_setDataCallback(outputBuilder, outputCallback, nullptr);
+    AAudioStreamBuilder_setFramesPerDataCallback(outputBuilder, kFramesPerBuffer);
+
+    result = AAudioStreamBuilder_openStream(outputBuilder, &g_outputStream);
+    AAudioStreamBuilder_delete(outputBuilder);
+    if (result != AAUDIO_OK || !g_outputStream) {
+        LOGE("Failed to open output stream: %s", AAudio_convertResultToText(result));
+        AAudioStream_close(g_inputStream);
+        g_inputStream = nullptr;
+        return;
+    }
+
+    // ===== 启动 =====
+//    AAudioStream_requestStart(g_inputStream);
+//    AAudioStream_requestStart(g_outputStream);
+
+    g_running.store(true);
+
+    // 先标记为运行中
+    g_running.store(true);
+
+// 再启动流
+    result = AAudioStream_requestStart(g_inputStream);
+    if (result != AAUDIO_OK) {
+        g_running.store(false); // 启动失败要回滚
+//        goto cleanup;
+    }
+
+    result = AAudioStream_requestStart(g_outputStream);
+    if (result != AAUDIO_OK) {
+        g_running.store(false);
+        AAudioStream_requestStop(g_inputStream);
+//        goto cleanup;
+    }
+    LOGI("Audio loop started");
+
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_mirsmeng_ndk01_MainActivity_stopAudioLoop(JNIEnv *env, jobject thiz) {
+    if (!g_running.exchange(false)) return;
+
+    if (g_inputStream) AAudioStream_requestStop(g_inputStream);
+    if (g_outputStream) AAudioStream_requestStop(g_outputStream);
+
+//    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    usleep(50 * 1000);  // 50 毫秒 = 50,000 微秒
+
+    if (g_inputStream) {
+        AAudioStream_close(g_inputStream);
+        g_inputStream = nullptr;
+    }
+    if (g_outputStream) {
+        AAudioStream_close(g_outputStream);
+        g_outputStream = nullptr;
+    }
+
+    LOGI("Audio loop stopped");
+}

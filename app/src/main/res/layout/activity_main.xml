@@ -14,16 +14,57 @@
         android:text="Hello World!" />
 
     <Button
+        android:layout_marginTop="20dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/btn"
-        android:text="开始"
+        android:id="@+id/btn_start"
+        android:text="开始录音播放_Native"
         />
 
-    <ProgressBar
+    <Button
+        android:layout_marginTop="10dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/btn_stop"
+        android:text="结束录音播放_Native"
+        />
+
+    <Button
+        android:layout_marginTop="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/btn_record_start2"
+        android:text="开始录音_java"
+        />
+
+    <Button
+        android:layout_marginTop="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/btn_record_stop2"
+        android:text="结束录音_java"
+        />
+
+    <Button
+        android:layout_marginTop="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/btn_player_start2"
+        android:text="开始播放_java"
+        />
+
+    <Button
+        android:layout_marginTop="10dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/btn_player_stop2"
+        android:text="结束播放_java"
+        />
+
+<!--    <ProgressBar
         android:id="@+id/pb"
         style="@android:style/Widget.Holo.ProgressBar.Horizontal"
         android:layout_width="match_parent"
-        android:layout_height="30dp" />
+        android:layout_height="30dp" />-->
 
 </LinearLayout>

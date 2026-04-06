@@ -1,44 +1,42 @@
-#include <jni.h>
+/**
+ * aaudio Callback模式录音播放Demo
+ * 基于Android 11 (API 30)
+ *
+ * 使用aaudio的callback模式：录音数据通过回调函数获取，
+ * 然后直接转发给播放流
+ */
+
 #include <aaudio/AAudio.h>
 #include <android/log.h>
-#include <atomic>
-#include <cstring> // for memset
-#include <unistd.h>
-#include <chrono>
 #include <thread>
+#include <atomic>
 #include <mutex>
 #include <vector>
 
-#define LOG_TAG "AAudioJNIDemo"
+#define LOG_TAG "AAudioCallbackDemo"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-// ================== 全局变量 ==================
 static std::atomic<bool> g_running{true};
 static std::mutex g_mutex;
 static std::vector<float> g_buffer;
 static const size_t kBufferSize = 480;  // 10ms @ 48kHz
 
 // 音频参数
-static constexpr int32_t kSampleRate = 8000;
+static constexpr int32_t kSampleRate = 48000;
 static constexpr int32_t kChannels = 1;
-static constexpr int32_t kFramesPerBuffer = 1920;
+static constexpr int32_t kFramesPerBuffer = 480;
 
 // Callback函数：处理录音数据
 aaudio_data_callback_result_t inputCallback(
-        AAudioStream* stream,
-        void* userData,
-        void* audioData,
-        int32_t numFrames) {
+    AAudioStream* stream,
+    void* userData,
+    void* audioData,
+    int32_t numFrames) {
 
     (void)stream;
     (void)userData;
 
-    int32_t fromat = AAudioStream_getFormat(stream); //获取实际使用的数据格式（I16 或 FLOAT）。
-    int32_t sampleRate = AAudioStream_getSampleRate(stream); //获取采样率。
-    int32_t channelCount = AAudioStream_getChannelCount(stream); //获取声道数。
-
-    LOGI("inputCallback called! numFrames = %d,fromat = %d,sampleRate = %d,channelCount = %d", numFrames,fromat,sampleRate,channelCount); // 👈 添加这行
     // 获取录音数据
     float* inputBuffer = static_cast<float*>(audioData);
 
@@ -56,10 +54,10 @@ aaudio_data_callback_result_t inputCallback(
 
 // Callback函数：播放数据
 aaudio_data_callback_result_t outputCallback(
-        AAudioStream* stream,
-        void* userData,
-        void* audioData,
-        int32_t numFrames) {
+    AAudioStream* stream,
+    void* userData,
+    void* audioData,
+    int32_t numFrames) {
 
     (void)userData;
 
@@ -89,8 +87,7 @@ aaudio_data_callback_result_t outputCallback(
     return AAUDIO_CALLBACK_RESULT_CONTINUE;
 }
 
-extern "C" JNIEXPORT jint JNICALL
-Java_com_example_mirsmeng_ndk01_MainActivity_startAudioLoop(JNIEnv *env, jobject thiz) {
+int main() {
     LOGI("AAudio Callback Demo Start");
 
     AAudioStream* inputStream = nullptr;
@@ -177,7 +174,7 @@ Java_com_example_mirsmeng_ndk01_MainActivity_startAudioLoop(JNIEnv *env, jobject
 
     // 等待用户输入(在Android上可以通过其他方式触发)
     // 这里使用线程 sleep 模拟，实际使用时可以通过信号量等方式
-    std::this_thread::sleep_for(std::chrono::seconds(3));
+    std::this_thread::sleep_for(std::chrono::seconds(10));
 
     LOGI("Stopping...");
 

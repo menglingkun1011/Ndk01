@@ -1,15 +1,17 @@
 package com.example.mirsmeng.ndk01;
 
-import android.os.SystemClock;
+import android.content.pm.PackageManager;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
-
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import java.io.IOException;
 
 
 /**
@@ -54,41 +56,97 @@ import androidx.appcompat.app.AppCompatActivity;
  */
 public class MainActivity extends AppCompatActivity {
 
-    private TextView tv;
+    private Button btn_start,btn_stop;
     public static final String TAG = MainActivity.class.getSimpleName();
+    private static final int REQUEST_RECORD_AUDIO = 100;
+    private MediaRecorder recorder;
+    private MediaPlayer player;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        tv = (TextView) findViewById(R.id.tv);
-        tv.setText(stringFromJNI());
+        btn_start = (Button) findViewById(R.id.btn_start);
+        btn_stop = (Button) findViewById(R.id.btn_stop);
+        btn_start.setOnClickListener(v -> {
+            Log.i(TAG, "onClick: btn_start");
+            startAudioLoop();
+        });
+        btn_stop.setOnClickListener(v -> {
+            Log.i(TAG, "onClick: btn_stop");
+//            stopAudioLoop();
+        });
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.RECORD_AUDIO},
+                    REQUEST_RECORD_AUDIO);
+        }
 
-        findViewById(R.id.btn).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.i(TAG,"ddd333");
-                JniUtils jniUtils = new JniUtils();
-                String ss = jniUtils.stringFromJNI();
-                Log.i(TAG,"ss:"+ss);
-                tv.setText(ss);
-                int[] arr = new int[10];
-                jniUtils.intArrFromJNI(arr);
-                Log.i(TAG,"arr len: "+arr.length);
-                for (int i = 0; i < arr.length; i++) {
-                    Log.i(TAG,"arr["+i+"]: "+arr[i]);
-                }
+        findViewById(R.id.btn_record_start2).setOnClickListener(v -> {
+
+            recorder = new MediaRecorder();
+            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+            Log.i(TAG, "onCreate: path = "+getExternalFilesDir(null));
+            recorder.setOutputFile(getExternalFilesDir(null) + "/audiorecord.3gp");
+            try {
+                recorder.prepare();
+                recorder.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        findViewById(R.id.btn_record_stop2).setOnClickListener(v -> {
+            try {
+                // 假设在某个时间点停止录制
+                recorder.stop();
+                recorder.release();
+                recorder = null;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+        findViewById(R.id.btn_player_start2).setOnClickListener(v -> {
+            try {
+                player = new MediaPlayer();
+                player.setDataSource(getExternalFilesDir(null) + "/audiorecord.3gp");
+                player.prepare();
+                player.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        findViewById(R.id.btn_player_stop2).setOnClickListener(v -> {
+            try {
+                // 假设在某个时间点停止播放
+                player.stop();
+                player.release();
+                player = null;
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
 
     }
 
-    //获取c中的字符串
-    public native String stringFromJNI();
-
-    static {
-        System.loadLibrary("native-lib");
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_RECORD_AUDIO) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "录音权限已授权", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "录音权限被拒绝", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
+
 
     /**
      *
@@ -102,4 +160,11 @@ public class MainActivity extends AppCompatActivity {
             }
      *3.把定义本地方法的类在需要调用的地方new出来  在调用本地方法。
      */
+
+    static {
+        System.loadLibrary("native-lib");
+    }
+
+    public native int startAudioLoop();
+//    public native void stopAudioLoop();
 }
